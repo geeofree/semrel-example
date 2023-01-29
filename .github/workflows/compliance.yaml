@@ -8,9 +8,11 @@ jobs:
   compliance:
     runs-on: ubuntu-latest
     env:
-      BASE_SHA: ${{ github.pull_request.base.sha }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v3
         with:
