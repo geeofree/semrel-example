@@ -1,0 +1,27 @@
+name: Compliance
+
+on:
+  pull_request:
+    branches: [master, develop]
+
+jobs:
+  compliance:
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.pull_request.base.sha }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+
+      - name: Install Packages
+        run: npm ci
+
+      - name: Lint Commits
+        run: npx commitlint -f $BASE_SHA
+
+      - name: Run Tests
+        run: npm test
