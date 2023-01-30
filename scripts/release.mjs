@@ -109,11 +109,11 @@ import config from './config.mjs';
         *   <CommitBody>
         *   Commit Ref: <Link:CommitRef>
         **/
-      const note = `- **${commit.subject}**\n  ${commit.body}\n  ${commitRef}`;
+      const note = `- ## ${commit.subject}**\n\n  ${commit.body}\n\n  ${commitRef}`;
       return note;
     }).join('\n');
 
-    const note = `### ${title}\n${notes}`;
+    const note = `# ${title}\n\n${notes}`;
 
     return note;
   }).filter(Boolean).join("\n\n");
