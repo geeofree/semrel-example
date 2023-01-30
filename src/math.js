@@ -30,9 +30,18 @@ const mul = (a, b) => a * b;
  **/
 const div = (a, b) => a / b;
 
+/**
+ * Get the power of a number
+ * @param {number} b Base number
+ * @param {number} n Nth power
+ * @returns {number} b^n
+ **/
+const pow = (b, n) => Math.pow(b, n);
+
 module.exports = {
   add,
   sub,
   mul,
   div,
+  pow,
 };
