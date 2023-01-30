@@ -22,8 +22,17 @@ const sub = (a, b) => a - b;
  **/
 const mul = (a, b) => a * b;
 
+/**
+ * Divides two numbers
+ * @param {number} a
+ * @param {number} b
+ * @returns {number} a / b
+ **/
+const div = (a, b) => a / b;
+
 module.exports = {
   add,
   sub,
   mul,
+  div,
 };
