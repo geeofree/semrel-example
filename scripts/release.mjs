@@ -8,11 +8,11 @@ import config from './config.mjs';
 
   const TOKEN = GH_TOKEN || GITHUB_TOKEN
 
-  if (!TOKEN) {
+  if (!TOKEN && !config['dry-run']) {
     throw '[ERROR] Please provide a github token.';
   }
 
-  if (!GH_REPOSITORY) {
+  if (!GH_REPOSITORY && !config['dry-run']) {
     throw '[ERROR] The github repository is required. Should contain: <repo_owner>/<repo_name>';
   }
 
@@ -23,7 +23,7 @@ import config from './config.mjs';
     email: GIT_COMMITTER_EMAIL || 'semrel-bot@hotmail.com',
   }
 
-  const [GH_REPO_OWNER, GH_REPO_NAME] = GH_REPOSITORY.split('/');
+  const [GH_REPO_OWNER, GH_REPO_NAME] = (GH_REPOSITORY || '').split('/');
   const REPO_PUBLIC_URL = (await $`git config --get remote.origin.url`).toString().trim();
 
   const suffix = config.suffix ? `-${config.suffix}` : '';
@@ -103,14 +103,26 @@ import config from './config.mjs';
 
     const notes = commits.map(commit => {
       const commitRef = `Commit Ref: [${commit.short}](${REPO_PUBLIC_URL.replace(/\.git$/, '')}/commit/${commit.hash})`
+      const scope = commit.subject.replace(new RegExp('^\\w+(\\((\\w|-)+\\))?:(.)+'), '$1').replace(/\(|\)/g, '');
+
       /**
         * Release Note Format:
-        * - <CommitSubject>
+        * - ## <CommitSubject>
+        *
         *   <CommitBody>
+        *
         *   Commit Ref: <Link:CommitRef>
+        *
+        *   [<TicketUrl>]
         **/
-      const note = `- ## ${commit.subject}**\n\n  ${commit.body}\n\n  ${commitRef}`;
-      return note;
+      const contents = [`- ## ${commit.subject}`, commit.body, commitRef]
+
+      if (config['jira-url'] && scope) {
+        const ticketUrl = `Ticket [${scope}](${config['jira-url']}/${scope})`
+        contents.push(ticketUrl);
+      }
+
+      return contents.join("\n\n  ");
     }).join('\n');
 
     const note = `# ${title}\n\n${notes}`;
@@ -142,6 +154,23 @@ import config from './config.mjs';
   const nextTag = `v${nextVersion}`;
   const releaseMessage = `chore(release): ${nextTag}\n\n${releaseNotes}`;
 
+  if (DEBUG) {
+    console.log({
+      config,
+      tags,
+      latestTag,
+      latestCommits,
+      semanticChanges,
+      releaseNotes,
+      nextReleaseType,
+      nextVersion,
+    });
+  }
+
+  if (config['dry-run']) {
+    return console.log("[INFO] Dry-run is on. Won't be releasing changes.");
+  }
+
   await $`git config user.name ${GIT_COMMITTER.name}`;
   await $`git config user.email ${GIT_COMMITTER.email}`;
 
@@ -165,17 +194,4 @@ import config from './config.mjs';
       https://api.github.com/repos/${GH_REPO_OWNER}/${GH_REPO_NAME}/releases \
       -d ${releaseData}
   `
-
-  if (DEBUG) {
-    console.log({
-      config,
-      tags,
-      latestTag,
-      latestCommits,
-      semanticChanges,
-      releaseNotes,
-      nextReleaseType,
-      nextVersion,
-    });
-  }
 })()
