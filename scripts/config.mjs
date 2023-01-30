@@ -18,6 +18,7 @@ import 'zx/globals';
   * @property {string} initial-version
   * @property {boolean?} dry-run
   * @property {string?} jira-url
+  * @property {boolean?} validate-jira-links
   * @property {string?} suffix
   * @property {ReleaseRules} release-rules
   **/
@@ -27,6 +28,7 @@ let config = {
   'initial-version': '1.0.0',
   'dry-run': false,
   'jira-url': null,
+  'validate-jira-links': false,
   suffix: null,
   'release-rules': {
     major: {
@@ -93,6 +95,7 @@ const validArgs = [
   'initial-version', 'i',
   'jira-url', 'ju',
   'dry-run', 'd',
+  'validate-jira-links'
 ];
 
 const argAliases = {

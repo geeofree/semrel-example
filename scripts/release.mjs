@@ -93,43 +93,6 @@ import config from './config.mjs';
 
   const RELEASE_SEVERITY_ORDER = ['major', 'minor', 'patch'];
 
-  const releaseNotes = RELEASE_SEVERITY_ORDER.map(versionSection => {
-    /** @type {import("./config.mjs").ReleaseRule} */
-    const { title } = config['release-rules'][versionSection];
-
-    const commits = semanticChanges[versionSection];
-
-    if (!commits.length) return;
-
-    const notes = commits.map(commit => {
-      const commitRef = `Commit Ref: [${commit.short}](${REPO_PUBLIC_URL.replace(/\.git$/, '')}/commit/${commit.hash})`
-      const scope = commit.subject.replace(new RegExp('^\\w+(\\((\\w|-)+\\))?:(.)+'), '$1').replace(/\(|\)/g, '');
-
-      /**
-        * Release Note Format:
-        * - ## <CommitSubject>
-        *
-        *   <CommitBody>
-        *
-        *   Commit Ref: <Link:CommitRef>
-        *
-        *   [<TicketUrl>]
-        **/
-      const contents = [`- ## ${commit.subject}`, commit.body, commitRef]
-
-      if (config['jira-url'] && scope) {
-        const ticketUrl = `Ticket: [${scope}](${config['jira-url']}/${scope})`;
-        contents.push(ticketUrl);
-      }
-
-      return contents.join("\n\n  ");
-    }).join('\n');
-
-    const note = `# ${title}\n\n${notes}`;
-
-    return note;
-  }).filter(Boolean).join("\n\n");
-
   const nextReleaseType = RELEASE_SEVERITY_ORDER.find(versionSection => semanticChanges[versionSection].length);
 
   if (!nextReleaseType) {
@@ -150,6 +113,81 @@ import config from './config.mjs';
 
     throw `[ERROR] Invalid release type found: ${releaseType}`;
   })(latestTag, nextReleaseType);
+
+  /**
+    * @param {Commit} commit
+    * @returns {[string, string?]} A tuple containing the scope and the jira ticket url
+    **/
+  const getJiraTicketURL = (commit) => {
+    const SCOPE_REGEX = new RegExp('^\\w+(\\((\\w|-)+\\))?:(.)+');
+    const scope = commit.subject.replace(SCOPE_REGEX, '$1').replace(/\(|\)/g, '');
+    let jiraTicketURL = null
+
+    if (config['jira-url'] && scope) {
+      jiraTicketURL = `${config['jira-url']}/${scope}`;
+    }
+
+    return [scope, jiraTicketURL];
+  };
+
+  if (config['validate-jira-links']) {
+    const invalidScopesPromises = RELEASE_SEVERITY_ORDER.reduce((acc, versionSection) => {
+      const commits = semanticChanges[versionSection];
+      const scopeChecks = commits.map(commit => {
+        const [scope, ticketURL] = getJiraTicketURL(commit);
+        if (!ticketURL) return;
+        return $.noquote`curl --head --silent --fail ${ticketURL} -w "scope: ${scope} url: %{url} status-code: %{http_code}\n" -o /dev/null 2> /dev/null`;
+      }).filter(Boolean);
+      return acc.concat(scopeChecks);
+    }, []);
+
+    // Check if any of the scopes contains a valid Jira URL
+    if (invalidScopesPromises.length) {
+      try {
+        await Promise.all(invalidScopesPromises);
+      } catch (error) {
+        console.error(`[ERROR] Invalid scope: A jira link for a scope did not exist:\n\n${error.stdout}`);
+        return;
+      }
+    }
+  }
+
+  const releaseNotes = RELEASE_SEVERITY_ORDER.map(versionSection => {
+    /** @type {import("./config.mjs").ReleaseRule} */
+    const { title } = config['release-rules'][versionSection];
+
+    const commits = semanticChanges[versionSection];
+
+    if (!commits.length) return;
+
+    const notes = commits.map(commit => {
+      const commitRef = `Commit Ref: [${commit.short}](${REPO_PUBLIC_URL.replace(/\.git$/, '')}/commit/${commit.hash})`
+      const [scope, jiraTicketURL] = getJiraTicketURL(commit);
+
+      /**
+        * Release Note Format:
+        * - ## <CommitSubject>
+        *
+        *   <CommitBody>
+        *
+        *   Commit Ref: <Link:CommitRef>
+        *
+        *   [<TicketUrl>]
+        **/
+      const contents = [`- ## ${commit.subject}`, commit.body, commitRef]
+
+      if (jiraTicketURL) {
+        const jiraTicketURLText = `Ticket: [${scope}](${jiraTicketURL})`;
+        contents.push(jiraTicketURLText);
+      }
+
+      return contents.join("\n\n  ");
+    }).join('\n');
+
+    const note = `# ${title}\n\n${notes}`;
+
+    return note;
+  }).filter(Boolean).join("\n\n");
 
   const nextTag = `v${nextVersion}`;
   const releaseMessage = `chore(release): ${nextTag}\n\n${releaseNotes}`;
