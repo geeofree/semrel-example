@@ -4,7 +4,7 @@
  * @param {number} b
  * @returns {number} a + b
  **/
-const add = (a, b) => a + b;
+const add = (a, b) => b + a;
 
 /**
  * Subtracts two numbers

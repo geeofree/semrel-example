@@ -1,4 +1,4 @@
-const { add, sub } = require("./math");
+const { add, sub, mul } = require("./math");
 
 describe("Math", () => {
   test("add(1, 1) = 2", () => {
@@ -9,7 +9,7 @@ describe("Math", () => {
     expect(sub(5, 3)).toBe(2);
   });
 
-  test("sub(5, 2) = 10", () => {
-    expect(sub(5, 2)).toBe(10);
+  test("mul(5, 2) = 10", () => {
+    expect(mul(5, 2)).toBe(10);
   });
 });
