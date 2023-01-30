@@ -1,0 +1,8 @@
+initial-version: 1.0.10
+
+suffix: staging
+
+release-rules:
+  minor:
+    title: 'New Features!'
+    starts-with: [feat, feature, new-feature]
