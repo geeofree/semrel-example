@@ -25,6 +25,8 @@ jobs:
       - name: Install Packages
         run: npm ci
 
+      - run: npx zx scripts/release.mjs --ju https://paymentworld.atlassian.net/browse --dry-run
+
       - name: Lint Commits
         run: npx commitlint -f $BASE_SHA
 

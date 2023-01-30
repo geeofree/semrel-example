@@ -16,6 +16,8 @@ import 'zx/globals';
 /**
   * @typedef SemRelConfig
   * @property {string} initial-version
+  * @property {boolean?} dry-run
+  * @property {string?} jira-url
   * @property {string?} suffix
   * @property {ReleaseRules} release-rules
   **/
@@ -23,6 +25,8 @@ import 'zx/globals';
 /** @type SemRelConfig */
 let config = {
   'initial-version': '1.0.0',
+  'dry-run': false,
+  'jira-url': null,
   suffix: null,
   'release-rules': {
     major: {
@@ -87,11 +91,15 @@ if (configFilePath) {
 const validArgs = [
   'suffix', 's',
   'initial-version', 'i',
+  'jira-url', 'ju',
+  'dry-run', 'd',
 ];
 
 const argAliases = {
   s: 'suffix',
   i: 'initial-version',
+  ju: 'jira-url',
+  d: 'dry-run',
 }
 
 const args = Object.keys(argv).filter(arg => validArgs.includes(arg)).reduce((acc, arg) => {
