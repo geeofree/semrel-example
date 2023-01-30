@@ -118,7 +118,7 @@ import config from './config.mjs';
       const contents = [`- ## ${commit.subject}`, commit.body, commitRef]
 
       if (config['jira-url'] && scope) {
-        const ticketUrl = `Ticket [${scope}](${config['jira-url']}/${scope})`
+        const ticketUrl = `Ticket: [${scope}](${config['jira-url']}/${scope})`;
         contents.push(ticketUrl);
       }
 
