@@ -7,9 +7,26 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      SEMREL_DEBUG: 1
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPOSITORY: ${{ github.repository }}
     steps:
-    - if: ${{ github.ref_name == 'master' }}
-      run: echo "Release ${{ github.ref_name }}"
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
 
-    - if: ${{ github.ref_name == 'develop' }}
-      run: echo "Release ${{ github.ref_name }}"
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 16
+          cache: 'npm'
+
+      - run: npm ci
+
+      - if: ${{ github.ref_name == 'master' }}
+        name: Release Production
+        run: npx zx scripts/release.mjs
+
+      - if: ${{ github.ref_name == 'develop' }}
+        name: Release Staging
+        run: npx zx scripts/release.mjs -s staging -i 1.0.10
